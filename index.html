@@ -289,7 +289,7 @@
   .calc-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
   .calc-btn {
     padding:14px 0; border-radius:12px; border:none; cursor:pointer;
-    font-family:'Tajawal',sans-serif; font-size:16px; font-weight:700;
+     font-size:16px; font-weight:700;
     transition:all .12s; user-select:none;
   }
   .calc-btn:active { transform:scale(0.93); }
@@ -470,7 +470,7 @@
   .lo-btn-retry {
     padding:13px;border-radius:12px;border:none;cursor:pointer;
     background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;
-    font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;
+    font-size:14px;font-weight:700;
     box-shadow:0 4px 20px rgba(59,130,246,0.35);
     transition:transform .15s,opacity .15s;
   }
@@ -479,7 +479,7 @@
     padding:11px;border-radius:12px;cursor:pointer;
     background:rgba(255,255,255,0.05);
     border:1px solid rgba(255,255,255,0.12);color:#94a3b8;
-    font-family:'Tajawal',sans-serif;font-size:13px;font-weight:600;
+    font-size:13px;font-weight:600;
     transition:background .15s;
   }
   .lo-btn-offline:active { background:rgba(255,255,255,0.1); }
@@ -574,6 +574,7 @@
     <button class="nav-btn" onclick="showPage('debts')" id="nav-debts">💳 المديونيات</button>
     <button class="nav-btn" onclick="showPage('archive')" id="nav-archive">🗂️ السجل</button>
     <button class="nav-btn" onclick="showPage('partners')" id="nav-partners">🤝 الشركاء</button>
+    <button class="nav-btn" onclick="showPage('costs')" id="nav-costs">🏗️ التكاليف</button>
     <button class="nav-btn" onclick="openCalc()" style="background:rgba(34,197,94,0.12);color:#4ade80;border:1px solid rgba(34,197,94,0.3);">🧮 حاسبة</button>
     <button class="nav-btn" onclick="openPrintModal()" style="background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.3);">🖨️ طباعة PDF</button>
   </nav>
@@ -628,6 +629,16 @@
       <button class="btn btn-gold" onclick="openPartnersSettings()">⚙️ إعدادات الشراكة</button>
     </div>
     <div id="partners-content"></div>
+  </div>
+
+  <!-- ========== COSTS PAGE ========== -->
+  <div id="page-costs" class="hidden">
+    <div class="page-header">
+      <div class="page-title">🏗️ تكاليف المشروع</div>
+      <button class="btn btn-gold" onclick="openCostForm()">➕ إضافة تكلفة</button>
+    </div>
+    <div id="costs-summary" style="margin-bottom:20px;"></div>
+    <div id="costs-list"></div>
   </div>
 
 </div><!-- /main -->
@@ -1308,7 +1319,7 @@ let payContext = null; // {type:'rent'|'debt', unitId, debtId}
 let editingCycle = '12months';
 
 function showPage(page) {
-  ['dashboard','units','debts','archive','partners'].forEach(p => {
+  ['dashboard','units','debts','archive','partners','costs'].forEach(p => {
     document.getElementById(`page-${p}`).classList.toggle('hidden', p !== page);
     document.getElementById(`nav-${p}`).classList.toggle('active', p === page);
   });
@@ -1322,6 +1333,7 @@ function renderAll() {
   renderDebts();
   renderArchive();
   renderPartners();
+  renderCosts();
 }
 
 // ===================== DASHBOARD =====================
@@ -1512,7 +1524,7 @@ function renderUnits() {
                     <button onclick="openEditPayment('${selectedUnit}',${realIdx})"
                       style="padding:4px 10px;border-radius:7px;border:none;cursor:pointer;
                              background:rgba(59,130,246,0.15);color:#3b82f6;font-size:12px;
-                             font-family:'Tajawal',sans-serif;font-weight:600;">✏️ تعديل</button>
+                             font-weight:600;">✏️ تعديل</button>
                     <button onclick="deletePayment('${selectedUnit}',${realIdx})"
                       style="width:28px;height:28px;border-radius:7px;border:none;cursor:pointer;
                              background:rgba(231,76,60,0.15);color:#e74c3c;font-size:14px;">×</button>
@@ -1651,7 +1663,7 @@ function renderDebts() {
                           <div style="display:flex;gap:4px;justify-content:center;">
                             <button onclick="openEditDebtPayment(${debt.id},${realIdx})"
                               style="padding:3px 8px;border-radius:5px;border:none;cursor:pointer;
-                                     background:rgba(59,130,246,0.15);color:#3b82f6;font-size:11px;font-family:'Tajawal',sans-serif;">✏️</button>
+                                     background:rgba(59,130,246,0.15);color:#3b82f6;font-size:11px;">✏️</button>
                             <button onclick="deleteDebtPayment(${debt.id},${realIdx})"
                               style="width:22px;height:22px;border-radius:5px;border:none;cursor:pointer;
                                      background:rgba(231,76,60,0.15);color:#e74c3c;font-size:12px;">×</button>
@@ -1838,6 +1850,10 @@ function renderArchive() {
               </div>
             </div>
             <div style="display:flex;gap:8px;align-items:center;">
+              <button onclick="editArchive(${r.id})"
+                style="padding:6px 12px;border-radius:8px;border:none;cursor:pointer;
+                       background:rgba(59,130,246,0.15);color:#3b82f6;font-size:12px;
+                       font-weight:600;">✏️ تعديل</button>
               <button onclick="deleteArchive(${r.id})"
                 style="width:30px;height:30px;border-radius:8px;border:none;cursor:pointer;
                        background:rgba(231,76,60,0.15);color:#e74c3c;font-size:15px;">×</button>
@@ -2184,7 +2200,7 @@ function generateReport() {
 function buildReportStyles() {
   return `
   * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:'Tajawal',sans-serif; direction:rtl; color:#1e293b; background:#fff; padding:30px 36px; font-size:13px; }
+  body {  direction:rtl; color:#1e293b; background:#fff; padding:30px 36px; font-size:13px; }
   .report-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; border-bottom:3px solid #1d4ed8; padding-bottom:14px; }
   .report-title { font-size:24px; font-weight:900; color:#1d4ed8; }
   .report-sub { font-size:13px; color:#64748b; margin-top:4px; }
@@ -2387,7 +2403,196 @@ function printFullReport(filterYear) {
     return `<tr><td>${r.name}</td><td>${r.unitLabel||r.unitId}</td><td>${fD(r.startDate)}</td><td>${fD(r.endDate)}</td><td>${fD(r.checkoutDate)}</td><td>${r.checkoutReason||'—'}</td><td>${tp.toLocaleString('ar')} ر.س</td></tr>`;
   }).join('')}</tbody></table>`;
   }
-  // PENDING PAYMENTS SECTION
+  // YEARLY PROFIT CHART (only for all_years report)
+  if (showSummary && filterYear === 'all') {
+    // Build year-by-year data
+    var yearMap = {}; // year -> {rent, debt}
+
+    function addToYear(dateStr, amount, type) {
+      if (!dateStr) return;
+      var yr = new Date(dateStr).getFullYear();
+      if (!yearMap[yr]) yearMap[yr] = { rent: 0, debt: 0 };
+      yearMap[yr][type] += parseFloat(amount) || 0;
+    }
+
+    // Collect all rent payments
+    Object.values(tenants).forEach(function(t) {
+      (t.paymentHistory || []).forEach(function(p) { addToYear(p.date, p.amount, 'rent'); });
+    });
+    (archive || []).forEach(function(r) {
+      (r.paymentHistory || []).forEach(function(p) { addToYear(p.date, p.amount, 'rent'); });
+    });
+    // Collect debt payments
+    debts.forEach(function(d) {
+      (d.payments || []).forEach(function(p) { addToYear(p.date, p.amount, 'debt'); });
+    });
+
+    var years = Object.keys(yearMap).map(Number).sort();
+    if (years.length > 0) {
+      var pp3   = getPartners();
+      var totalProjectRent = 0;
+      var totalProjectDebt = 0;
+      years.forEach(function(y){ totalProjectRent += yearMap[y].rent; totalProjectDebt += yearMap[y].debt; });
+      var p1ProjectNet = (totalProjectRent * pp3.p1pct/100) - (totalProjectDebt * pp3.p1pct/100);
+      var p2ProjectNet = (totalProjectRent * pp3.p2pct/100) - (totalProjectDebt * pp3.p2pct/100);
+
+      // Build SVG bar chart
+      var chartW = 680; var chartH = 220;
+      var padL = 70; var padR = 20; var padT = 30; var padB = 50;
+      var drawW = chartW - padL - padR;
+      var drawH = chartH - padT - padB;
+      var maxVal = Math.max.apply(null, years.map(function(y){ return yearMap[y].rent; }));
+      if (maxVal === 0) maxVal = 1;
+      var barGroup = drawW / years.length;
+      var barW = Math.min(barGroup * 0.35, 40);
+      var gap   = barGroup * 0.05;
+
+      var svgBars = '';
+      var svgLabels = '';
+      var svgYLabels = '';
+
+      // Y axis labels
+      for (var yi = 0; yi <= 4; yi++) {
+        var yVal = (maxVal / 4) * yi;
+        var yPos = padT + drawH - (drawH * yi / 4);
+        svgYLabels += '<line x1="' + padL + '" y1="' + yPos + '" x2="' + (chartW-padR) + '" y2="' + yPos
+          + '" stroke="#e2e8f0" stroke-width="0.5"/>';
+        svgYLabels += '<text x="' + (padL-8) + '" y="' + (yPos+4) + '" text-anchor="end" font-size="9" fill="#94a3b8">'
+          + Math.round(yVal/1000) + 'K</text>';
+      }
+
+      years.forEach(function(yr, i) {
+        var d = yearMap[yr];
+        var cx = padL + i * barGroup + barGroup/2;
+        // Rent bar (blue)
+        var rentH = Math.max(2, (d.rent / maxVal) * drawH);
+        var rentY = padT + drawH - rentH;
+        svgBars += '<rect x="' + (cx - barW - gap/2) + '" y="' + rentY + '" width="' + barW + '" height="' + rentH
+          + '" fill="#3b82f6" rx="3"/>';
+        // Net bar (green)
+        var net = d.rent - d.debt;
+        var netH = Math.max(2, (Math.abs(net) / maxVal) * drawH);
+        var netY = padT + drawH - netH;
+        var netFill = net >= 0 ? '#22c55e' : '#ef4444';
+        svgBars += '<rect x="' + (cx + gap/2) + '" y="' + netY + '" width="' + barW + '" height="' + netH
+          + '" fill="' + netFill + '" rx="3"/>';
+        // Year label
+        svgLabels += '<text x="' + cx + '" y="' + (padT + drawH + 16) + '" text-anchor="middle" font-size="10" fill="#475569">' + yr + '</text>';
+        // Value on top of rent bar
+        svgLabels += '<text x="' + (cx - barW/2 - gap/2) + '" y="' + (rentY - 4) + '" text-anchor="middle" font-size="8" fill="#3b82f6">'
+          + Math.round(d.rent/1000) + 'K</text>';
+      });
+
+      // Legend
+      var legend = '<rect x="' + padL + '" y="' + (padT+drawH+28) + '" width="10" height="10" fill="#3b82f6" rx="2"/>'
+        + '<text x="' + (padL+14) + '" y="' + (padT+drawH+37) + '" font-size="10" fill="#475569">إجمالي الإيجارات</text>'
+        + '<rect x="' + (padL+130) + '" y="' + (padT+drawH+28) + '" width="10" height="10" fill="#22c55e" rx="2"/>'
+        + '<text x="' + (padL+144) + '" y="' + (padT+drawH+37) + '" font-size="10" fill="#475569">الصافي بعد المديونيات</text>';
+
+      var svgChart = '<svg width="' + chartW + '" height="' + chartH + '" xmlns="http://www.w3.org/2000/svg">'
+        + '<rect width="100%" height="100%" fill="#f8fafc" rx="8"/>'
+        + svgYLabels + svgBars + svgLabels + legend
+        + '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (padT+drawH) + '" stroke="#cbd5e1" stroke-width="1"/>'
+        + '<line x1="' + padL + '" y1="' + (padT+drawH) + '" x2="' + (chartW-padR) + '" y2="' + (padT+drawH) + '" stroke="#cbd5e1" stroke-width="1"/>'
+        + '</svg>';
+
+      // Yearly breakdown table
+      var yrTableRows = years.map(function(yr) {
+        var d   = yearMap[yr];
+        var net = d.rent - d.debt;
+        var p1n = net * (pp3.p1pct/100);
+        var p2n = net * (pp3.p2pct/100);
+        return '<tr style="border-bottom:1px solid #e2e8f0;">'
+          + '<td style="padding:7px 10px;font-weight:700;">' + yr + '</td>'
+          + '<td style="padding:7px 10px;text-align:center;color:#1d4ed8;font-weight:700;">' + Math.round(d.rent).toLocaleString('ar') + ' ر.س</td>'
+          + '<td style="padding:7px 10px;text-align:center;color:#dc2626;">' + Math.round(d.debt).toLocaleString('ar') + ' ر.س</td>'
+          + '<td style="padding:7px 10px;text-align:center;font-weight:700;color:' + (net>=0?'#16a34a':'#dc2626') + ';">' + Math.round(net).toLocaleString('ar') + ' ر.س</td>'
+          + '<td style="padding:7px 10px;text-align:center;color:#1d4ed8;">' + Math.round(p1n).toLocaleString('ar') + ' ر.س</td>'
+          + '<td style="padding:7px 10px;text-align:center;color:#7c3aed;">' + Math.round(p2n).toLocaleString('ar') + ' ر.س</td>'
+          + '</tr>';
+      }).join('');
+
+      body += '<h2>ملخص الأرباح من بداية المشروع</h2>';
+
+      // Summary boxes
+      body += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">'
+        + '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px;text-align:center;">'
+        + '<div style="font-size:10px;color:#64748b;">إجمالي الإيجارات</div>'
+        + '<div style="font-size:16px;font-weight:900;color:#1d4ed8;">' + Math.round(totalProjectRent).toLocaleString('ar') + ' ر.س</div></div>'
+        + '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px;text-align:center;">'
+        + '<div style="font-size:10px;color:#64748b;">إجمالي المديونيات</div>'
+        + '<div style="font-size:16px;font-weight:900;color:#dc2626;">' + Math.round(totalProjectDebt).toLocaleString('ar') + ' ر.س</div></div>'
+        + '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;text-align:center;">'
+        + '<div style="font-size:10px;color:#64748b;">نصيب ' + pp3.p1 + ' (' + pp3.p1pct + '%)</div>'
+        + '<div style="font-size:16px;font-weight:900;color:#16a34a;">' + Math.round(p1ProjectNet).toLocaleString('ar') + ' ر.س</div></div>'
+        + '<div style="background:#faf5ff;border:1px solid #ddd6fe;border-radius:10px;padding:12px;text-align:center;">'
+        + '<div style="font-size:10px;color:#64748b;">نصيب ' + pp3.p2 + ' (' + pp3.p2pct + '%)</div>'
+        + '<div style="font-size:16px;font-weight:900;color:#7c3aed;">' + Math.round(p2ProjectNet).toLocaleString('ar') + ' ر.س</div></div>'
+        + '</div>';
+
+      // Chart
+      body += '<div style="margin-bottom:16px;page-break-inside:avoid;">' + svgChart + '</div>';
+
+      // Yearly table
+      body += '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px;">'
+        + '<thead><tr style="background:#1d4ed8;color:#fff;">'
+        + '<th style="padding:8px 10px;text-align:right;">السنة</th>'
+        + '<th style="padding:8px 10px;text-align:center;">الإيجارات المحصلة</th>'
+        + '<th style="padding:8px 10px;text-align:center;">المديونيات المسددة</th>'
+        + '<th style="padding:8px 10px;text-align:center;">الصافي</th>'
+        + '<th style="padding:8px 10px;text-align:center;">نصيب ' + pp3.p1 + '</th>'
+        + '<th style="padding:8px 10px;text-align:center;">نصيب ' + pp3.p2 + '</th>'
+        + '</tr></thead><tbody>' + yrTableRows
+        + '<tr style="background:#f0f7ff;font-weight:800;">'
+        + '<td style="padding:8px 10px;">الإجمالي الكلي</td>'
+        + '<td style="padding:8px 10px;text-align:center;color:#1d4ed8;">' + Math.round(totalProjectRent).toLocaleString('ar') + ' ر.س</td>'
+        + '<td style="padding:8px 10px;text-align:center;color:#dc2626;">' + Math.round(totalProjectDebt).toLocaleString('ar') + ' ر.س</td>'
+        + '<td style="padding:8px 10px;text-align:center;color:' + (totalProjectRent-totalProjectDebt>=0?'#16a34a':'#dc2626') + ';">' + Math.round(totalProjectRent-totalProjectDebt).toLocaleString('ar') + ' ر.س</td>'
+        + '<td style="padding:8px 10px;text-align:center;color:#1d4ed8;">' + Math.round(p1ProjectNet).toLocaleString('ar') + ' ر.س</td>'
+        + '<td style="padding:8px 10px;text-align:center;color:#7c3aed;">' + Math.round(p2ProjectNet).toLocaleString('ar') + ' ر.س</td>'
+        + '</tr></tbody></table>';
+
+      // ROI Section
+      var totalCosts2 = (appData.costs || []).reduce(function(s,c){ return s + (parseFloat(c.amount)||0); }, 0);
+      if (totalCosts2 > 0) {
+        var totalNetProfit = totalProjectRent - totalProjectDebt;
+        var roi = totalNetProfit > 0 ? (totalNetProfit / totalCosts2 * 100).toFixed(1) : '0.0';
+        var p1roi = p1ProjectNet > 0 ? (p1ProjectNet / (totalCosts2*pp3.p1pct/100) * 100).toFixed(1) : '0.0';
+        var p2roi = p2ProjectNet > 0 ? (p2ProjectNet / (totalCosts2*pp3.p2pct/100) * 100).toFixed(1) : '0.0';
+        var recovery = totalNetProfit > 0 ? (totalCosts2/totalNetProfit*years.length).toFixed(1) : '—';
+        body += '<div style="background:#fffbeb;border:2px solid #f59e0b;border-radius:12px;padding:18px;margin-top:16px;page-break-inside:avoid;">'
+          + '<div style="font-size:16px;font-weight:900;color:#92400e;margin-bottom:14px;">📈 العائد على الاستثمار (ROI)</div>'
+          + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;">'
+          + '<div style="background:#fff;border-radius:10px;padding:12px;text-align:center;border:1px solid #fde68a;">'
+          + '<div style="font-size:10px;color:#92400e;margin-bottom:4px;">إجمالي تكاليف المشروع</div>'
+          + '<div style="font-size:16px;font-weight:900;color:#f59e0b;">' + Math.round(totalCosts2).toLocaleString('ar') + ' ر.س</div></div>'
+          + '<div style="background:#fff;border-radius:10px;padding:12px;text-align:center;border:1px solid #fde68a;">'
+          + '<div style="font-size:10px;color:#92400e;margin-bottom:4px;">صافي الأرباح الكلي</div>'
+          + '<div style="font-size:16px;font-weight:900;color:' + (totalNetProfit>=0?'#16a34a':'#dc2626') + ';">' + Math.round(totalNetProfit).toLocaleString('ar') + ' ر.س</div></div>'
+          + '<div style="background:#fff;border-radius:10px;padding:12px;text-align:center;border:1px solid #fde68a;">'
+          + '<div style="font-size:10px;color:#92400e;margin-bottom:4px;">نسبة العائد على التكلفة</div>'
+          + '<div style="font-size:22px;font-weight:900;color:' + (parseFloat(roi)>=0?'#16a34a':'#dc2626') + ';">' + roi + '%</div></div>'
+          + '<div style="background:#fff;border-radius:10px;padding:12px;text-align:center;border:1px solid #fde68a;">'
+          + '<div style="font-size:10px;color:#92400e;margin-bottom:4px;">سنوات استرداد التكلفة</div>'
+          + '<div style="font-size:18px;font-weight:900;color:#1d4ed8;">' + recovery + (recovery !== '—' ? ' سنة' : '') + '</div></div>'
+          + '</div>'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+          + '<div style="background:#eff6ff;border-radius:10px;padding:12px;border:1px solid #bfdbfe;">'
+          + '<div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:8px;">👤 ' + pp3.p1 + ' (' + pp3.p1pct + '%)</div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:#64748b;">نصيبه من التكلفة:</span><span style="font-weight:700;color:#dc2626;">' + Math.round(totalCosts2*pp3.p1pct/100).toLocaleString('ar') + ' ر.س</span></div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:#64748b;">صافي نصيبه من الأرباح:</span><span style="font-weight:700;color:#16a34a;">' + Math.round(p1ProjectNet).toLocaleString('ar') + ' ر.س</span></div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#64748b;">عائده على استثماره:</span><span style="font-weight:900;color:#16a34a;font-size:15px;">' + p1roi + '%</span></div></div>'
+          + '<div style="background:#faf5ff;border-radius:10px;padding:12px;border:1px solid #ddd6fe;">'
+          + '<div style="font-size:12px;font-weight:700;color:#7c3aed;margin-bottom:8px;">👤 ' + pp3.p2 + ' (' + pp3.p2pct + '%)</div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:#64748b;">نصيبه من التكلفة:</span><span style="font-weight:700;color:#dc2626;">' + Math.round(totalCosts2*pp3.p2pct/100).toLocaleString('ar') + ' ر.س</span></div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:#64748b;">صافي نصيبه من الأرباح:</span><span style="font-weight:700;color:#16a34a;">' + Math.round(p2ProjectNet).toLocaleString('ar') + ' ر.س</span></div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#64748b;">عائده على استثماره:</span><span style="font-weight:900;color:#16a34a;font-size:15px;">' + p2roi + '%</span></div></div>'
+          + '</div></div>';
+      }
+    }
+  }
+
+    // PENDING PAYMENTS SECTION
   if (showSummary) {
     var reportYear = (filterYear && filterYear !== 'all') ? parseInt(filterYear) : new Date().getFullYear();
     var pendingPayments = [];
@@ -2923,7 +3128,10 @@ function renderPartners() {
 // ===================== ARCHIVE FORM =====================
 var _afPayments = [];
 
+var _afEditId = null;
+
 function openArchiveForm() {
+  _afEditId = null;
   _afPayments = [];
   document.getElementById('af-name').value     = '';
   document.getElementById('af-phone').value    = '';
@@ -2935,10 +3143,38 @@ function openArchiveForm() {
   document.getElementById('af-checkout').value = new Date().toISOString().split('T')[0];
   document.getElementById('af-reason').value   = 'انتهاء العقد';
   document.getElementById('af-notes').value    = '';
+  var uSel = document.getElementById('af-unit');
+  uSel.innerHTML = '<option value="">-- اختر الوحدة --</option>'
+    + getUnits().map(function(u){ return '<option value="'+u.id+'">'+u.label+'</option>'; }).join('');
+  // Update modal title
+  document.querySelector('#archive-form-modal .modal-title').textContent = '➕ إضافة مستأجر سابق للسجل';
+  renderAfPayments();
+  document.getElementById('archive-form-modal').classList.remove('hidden');
+}
+
+function editArchive(id) {
+  var r = (appData.archive || []).find(function(a){ return a.id === id; });
+  if (!r) return;
+  _afEditId = id;
+  _afPayments = (r.paymentHistory || []).map(function(p){ return Object.assign({}, p); });
   // Populate units
   var uSel = document.getElementById('af-unit');
   uSel.innerHTML = '<option value="">-- اختر الوحدة --</option>'
     + getUnits().map(function(u){ return '<option value="'+u.id+'">'+u.label+'</option>'; }).join('');
+  // Fill form
+  document.getElementById('af-name').value     = r.name || '';
+  document.getElementById('af-phone').value    = r.phone || '';
+  document.getElementById('af-idnum').value    = r.idNumber || '';
+  document.getElementById('af-start').value    = r.startDate || '';
+  document.getElementById('af-end').value      = r.endDate || '';
+  document.getElementById('af-rent').value     = r.rentAmount || '';
+  document.getElementById('af-cycle').value    = r.paymentCycle || '12months';
+  document.getElementById('af-checkout').value = r.checkoutDate || '';
+  document.getElementById('af-reason').value   = r.checkoutReason || 'انتهاء العقد';
+  document.getElementById('af-notes').value    = r.checkoutNotes || '';
+  document.getElementById('af-unit').value     = r.unitId || '';
+  // Update modal title
+  document.querySelector('#archive-form-modal .modal-title').textContent = '✏️ تعديل بيانات مستأجر سابق';
   renderAfPayments();
   document.getElementById('archive-form-modal').classList.remove('hidden');
 }
@@ -2947,14 +3183,46 @@ function closeArchiveForm() {
   document.getElementById('archive-form-modal').classList.add('hidden');
 }
 
+var _afPayEditIdx = null;
+
 function afAddPayment() {
-  var date = prompt('تاريخ الدفعة (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
-  if (!date) return;
-  var amount = prompt('المبلغ (ر.س):');
-  if (!amount || isNaN(parseFloat(amount))) return;
-  var note = prompt('ملاحظة (اختياري):') || '';
-  _afPayments.push({ date: date, amount: parseFloat(amount), note: note });
+  _afPayEditIdx = null;
+  document.getElementById('af-pay-modal-title').textContent = '💰 إضافة دفعة';
+  document.getElementById('afp-date').value   = new Date().toISOString().split('T')[0];
+  document.getElementById('afp-amount').value = '';
+  document.getElementById('afp-note').value   = '';
+  document.getElementById('af-pay-modal').classList.remove('hidden');
+}
+
+function afEditPayment(idx) {
+  _afPayEditIdx = idx;
+  var p = _afPayments[idx];
+  document.getElementById('af-pay-modal-title').textContent = '✏️ تعديل الدفعة';
+  document.getElementById('afp-date').value   = p.date;
+  document.getElementById('afp-amount').value = p.amount;
+  document.getElementById('afp-note').value   = p.note || '';
+  document.getElementById('af-pay-modal').classList.remove('hidden');
+}
+
+function closeAfPayModal() {
+  document.getElementById('af-pay-modal').classList.add('hidden');
+  _afPayEditIdx = null;
+}
+
+function confirmAfPayment() {
+  var date   = document.getElementById('afp-date').value;
+  var amount = parseFloat(document.getElementById('afp-amount').value);
+  var note   = document.getElementById('afp-note').value.trim();
+  if (!date)             { alert('يرجى تحديد تاريخ الدفعة');     return; }
+  if (!amount || amount <= 0) { alert('يرجى إدخال مبلغ صحيح');  return; }
+
+  if (_afPayEditIdx !== null) {
+    _afPayments[_afPayEditIdx] = { date: date, amount: amount, note: note };
+  } else {
+    _afPayments.push({ date: date, amount: amount, note: note });
+  }
   _afPayments.sort(function(a,b){ return a.date > b.date ? 1 : -1; });
+  closeAfPayModal();
   renderAfPayments();
 }
 
@@ -2966,22 +3234,34 @@ function afRemovePayment(idx) {
 function renderAfPayments() {
   var el = document.getElementById('af-payments-list');
   if (!_afPayments.length) {
-    el.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:8px;">لا توجد دفعات مضافة بعد</div>';
+    el.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:12px;">'
+      + '📭 لا توجد دفعات — اضغط "+ إضافة دفعة" أعلاه</div>';
     return;
   }
+  var total = _afPayments.reduce(function(s,p){ return s+(parseFloat(p.amount)||0); }, 0);
   el.innerHTML = _afPayments.map(function(p, i) {
     return '<div style="display:flex;justify-content:space-between;align-items:center;'
-      + 'background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);'
-      + 'border-radius:8px;padding:8px 12px;">'
-      + '<div>'
-      + '<span style="font-weight:700;color:#22c55e;">' + (parseFloat(p.amount)||0).toLocaleString('ar') + ' ر.س</span>'
-      + '<span style="color:#64748b;font-size:12px;margin-right:10px;">📅 ' + fmt(p.date) + '</span>'
+      + 'background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.18);'
+      + 'border-radius:10px;padding:10px 14px;">'
+      + '<div style="flex:1;">'
+      + '<div style="font-weight:800;color:#22c55e;font-size:15px;">' + (parseFloat(p.amount)||0).toLocaleString('ar') + ' ر.س</div>'
+      + '<div style="display:flex;gap:8px;margin-top:3px;align-items:center;">'
+      + '<span style="color:#64748b;font-size:12px;">📅 ' + fmt(p.date) + '</span>'
       + (p.note ? '<span style="color:#64748b;font-size:11px;">· ' + p.note + '</span>' : '')
       + '</div>'
-      + '<button onclick="afRemovePayment(' + i + ')" style="width:24px;height:24px;border-radius:6px;border:none;'
-      + 'cursor:pointer;background:rgba(239,68,68,0.15);color:#ef4444;font-size:13px;">×</button>'
-      + '</div>';
-  }).join('');
+      + '</div>'
+      + '<div style="display:flex;gap:6px;">'
+      + '<button onclick="afEditPayment(' + i + ')" style="padding:5px 10px;border-radius:7px;border:none;'
+      + 'cursor:pointer;background:rgba(59,130,246,0.15);color:#3b82f6;font-size:12px;font-weight:600;">✏️</button>'
+      + '<button onclick="afRemovePayment(' + i + ')" style="width:28px;height:28px;border-radius:7px;border:none;'
+      + 'cursor:pointer;background:rgba(239,68,68,0.15);color:#ef4444;font-size:14px;">×</button>'
+      + '</div></div>';
+  }).join('')
+  + '<div style="display:flex;justify-content:space-between;padding:8px 14px;'
+  + 'background:rgba(34,197,94,0.12);border-radius:8px;margin-top:4px;">'
+  + '<span style="font-size:12px;color:#64748b;font-weight:600;">إجمالي الدفعات (' + _afPayments.length + ')</span>'
+  + '<span style="font-weight:800;color:#22c55e;">' + total.toLocaleString('ar') + ' ر.س</span>'
+  + '</div>';
 }
 
 function datesOverlap(s1, e1, s2, e2) {
@@ -3055,8 +3335,8 @@ function saveArchiveForm() {
 
   var unit = getUnits().find(function(u){ return u.id === unitId; });
   appData.archive = appData.archive || [];
-  appData.archive.push({
-    id:             Date.now(),
+  var record = {
+    id:             _afEditId || Date.now(),
     unitId:         unitId,
     unitLabel:      unit ? unit.label : unitId,
     name:           name,
@@ -3071,11 +3351,145 @@ function saveArchiveForm() {
     checkoutReason: document.getElementById('af-reason').value,
     checkoutNotes:  '',
     paymentHistory: _afPayments.slice(),
-  });
+  };
+  if (_afEditId) {
+    var idx = appData.archive.findIndex(function(a){ return a.id === _afEditId; });
+    if (idx !== -1) appData.archive[idx] = record;
+    toast('تم تعديل السجل ✓');
+  } else {
+    appData.archive.push(record);
+    toast('تم حفظ المستأجر في السجل ✓');
+  }
   saveData();
   closeArchiveForm();
   renderAll();
-  toast('تم حفظ المستأجر في السجل ✓');
+}
+
+
+// ===================== PROJECT COSTS =====================
+var _editCostId = null;
+
+function getCosts() { return appData.costs || []; }
+
+function openCostForm(id) {
+  _editCostId = id || null;
+  var c = id ? getCosts().find(function(x){ return x.id === id; }) : null;
+  document.getElementById('cost-modal-title').textContent = c ? '✏️ تعديل التكلفة' : '➕ إضافة تكلفة';
+  document.getElementById('c-desc').value     = c ? c.desc     : '';
+  document.getElementById('c-category').value = c ? c.category : 'بناء';
+  document.getElementById('c-amount').value   = c ? c.amount   : '';
+  document.getElementById('c-date').value     = c ? c.date     : new Date().toISOString().split('T')[0];
+  document.getElementById('c-notes').value    = c ? c.notes    : '';
+  document.getElementById('cost-modal').classList.remove('hidden');
+}
+
+function closeCostModal() {
+  document.getElementById('cost-modal').classList.add('hidden');
+  _editCostId = null;
+}
+
+function saveCost() {
+  var desc   = document.getElementById('c-desc').value.trim();
+  var amount = parseFloat(document.getElementById('c-amount').value);
+  if (!desc || !amount) { toast('يرجى ملء الحقول المطلوبة', 'error'); return; }
+  appData.costs = appData.costs || [];
+  var record = {
+    id:       _editCostId || Date.now(),
+    desc:     desc,
+    category: document.getElementById('c-category').value,
+    amount:   amount,
+    date:     document.getElementById('c-date').value,
+    notes:    document.getElementById('c-notes').value.trim(),
+  };
+  if (_editCostId) {
+    var idx = appData.costs.findIndex(function(x){ return x.id === _editCostId; });
+    if (idx !== -1) appData.costs[idx] = record;
+    toast('تم تعديل التكلفة ✓');
+  } else {
+    appData.costs.push(record);
+    toast('تمت إضافة التكلفة ✓');
+  }
+  saveData();
+  closeCostModal();
+  renderAll();
+}
+
+function deleteCost(id) {
+  if (!confirm('حذف هذه التكلفة؟')) return;
+  appData.costs = (appData.costs || []).filter(function(x){ return x.id !== id; });
+  saveData();
+  renderAll();
+  toast('تم الحذف');
+}
+
+function renderCosts() {
+  var sumEl  = document.getElementById('costs-summary');
+  var listEl = document.getElementById('costs-list');
+  if (!sumEl || !listEl) return;
+  var costs = getCosts();
+  var total = costs.reduce(function(s,c){ return s + (parseFloat(c.amount)||0); }, 0);
+
+  // Group by category
+  var cats = {};
+  costs.forEach(function(c) {
+    if (!cats[c.category]) cats[c.category] = 0;
+    cats[c.category] += parseFloat(c.amount)||0;
+  });
+
+  // Summary
+  sumEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">'
+    + '<div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.35);border-radius:14px;padding:16px;">'
+    + '<div style="font-size:11px;color:#64748b;">إجمالي تكاليف المشروع</div>'
+    + '<div style="font-size:22px;font-weight:900;color:#f59e0b;">' + total.toLocaleString('ar') + ' ر.س</div></div>'
+    + Object.entries(cats).map(function(e){
+        var pct = total > 0 ? Math.round(e[1]/total*100) : 0;
+        return '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px;">'
+          + '<div style="font-size:11px;color:#64748b;">' + e[0] + '</div>'
+          + '<div style="font-size:16px;font-weight:800;color:#e2eeff;">' + (parseFloat(e[1])||0).toLocaleString('ar') + ' ر.س</div>'
+          + '<div style="font-size:11px;color:#64748b;margin-top:3px;">' + pct + '% من الإجمالي</div>'
+          + '<div style="height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:6px;">'
+          + '<div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,#f59e0b,#fbbf24);border-radius:2px;"></div></div>'
+          + '</div>';
+      }).join('')
+    + '</div>';
+
+  if (!costs.length) {
+    listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">🏗️</div>'
+      + '<div class="empty-title">لا توجد تكاليف مسجلة</div>'
+      + '<div class="empty-sub">اضغط "إضافة تكلفة" لتسجيل تكاليف المشروع</div></div>';
+    return;
+  }
+
+  // Table
+  var sorted = [...costs].sort(function(a,b){ return (a.date||'') < (b.date||'') ? 1 : -1; });
+  listEl.innerHTML = '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;">'
+    + '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+    + '<thead><tr style="background:rgba(245,158,11,0.12);">'
+    + '<th style="padding:10px 14px;text-align:right;color:#f59e0b;font-weight:700;">الوصف</th>'
+    + '<th style="padding:10px 14px;text-align:right;color:#f59e0b;font-weight:700;">الفئة</th>'
+    + '<th style="padding:10px 14px;text-align:right;color:#f59e0b;font-weight:700;">التاريخ</th>'
+    + '<th style="padding:10px 14px;text-align:center;color:#f59e0b;font-weight:700;">المبلغ</th>'
+    + '<th style="padding:10px 14px;text-align:center;color:#f59e0b;font-weight:700;">إجراءات</th>'
+    + '</tr></thead><tbody>'
+    + sorted.map(function(c, i) {
+        return '<tr style="border-bottom:1px solid rgba(255,255,255,0.05);background:' + (i%2?'rgba(255,255,255,0.02)':'transparent') + '">'
+          + '<td style="padding:9px 14px;font-weight:600;">' + c.desc
+            + (c.notes ? '<div style="font-size:11px;color:#64748b;margin-top:2px;">' + c.notes + '</div>' : '')
+            + '</td>'
+          + '<td style="padding:9px 14px;color:#94a3b8;">' + c.category + '</td>'
+          + '<td style="padding:9px 14px;color:#94a3b8;">' + fmt(c.date) + '</td>'
+          + '<td style="padding:9px 14px;text-align:center;font-weight:800;color:#f59e0b;">' + (parseFloat(c.amount)||0).toLocaleString('ar') + ' ر.س</td>'
+          + '<td style="padding:9px 14px;text-align:center;">'
+          + '<div style="display:flex;gap:6px;justify-content:center;">'
+          + '<button onclick="openCostForm(' + c.id + ')" style="padding:4px 10px;border-radius:7px;border:none;cursor:pointer;background:rgba(59,130,246,0.15);color:#3b82f6;font-size:12px;font-weight:600;">✏️</button>'
+          + '<button onclick="deleteCost(' + c.id + ')" style="width:26px;height:26px;border-radius:7px;border:none;cursor:pointer;background:rgba(239,68,68,0.15);color:#ef4444;font-size:14px;">×</button>'
+          + '</div></td></tr>';
+      }).join('')
+    + '<tr style="background:rgba(245,158,11,0.08);border-top:1px solid rgba(245,158,11,0.2);">'
+    + '<td colspan="3" style="padding:10px 14px;font-weight:800;color:#f59e0b;">الإجمالي الكلي</td>'
+    + '<td style="padding:10px 14px;text-align:center;font-weight:900;font-size:16px;color:#f59e0b;">' + total.toLocaleString('ar') + ' ر.س</td>'
+    + '<td></td></tr>'
+    + '</tbody></table></div>';
 }
 
 // ===================== INIT =====================
@@ -3201,6 +3615,84 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
+
+<!-- ========== COST FORM MODAL ========== -->
+<div id="cost-modal" class="overlay hidden">
+  <div class="modal" style="max-width:460px;border-color:rgba(245,158,11,0.4);">
+    <div class="modal-title" style="color:#f59e0b;" id="cost-modal-title">➕ إضافة تكلفة</div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="form-group">
+        <label class="form-label">وصف التكلفة *</label>
+        <input class="form-input" id="c-desc" type="text" placeholder="مثال: بناء، تشطيب، أرض...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الفئة</label>
+        <select class="form-select" id="c-category">
+          <option value="بناء">🏗️ بناء وإنشاء</option>
+          <option value="تشطيب">🎨 تشطيب وديكور</option>
+          <option value="أرض">🌍 أرض وعقار</option>
+          <option value="مرافق">⚡ مرافق وخدمات</option>
+          <option value="صيانة">🔧 صيانة</option>
+          <option value="أخرى">📦 أخرى</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">المبلغ (ر.س) *</label>
+        <input class="form-input" id="c-amount" type="number" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">التاريخ</label>
+        <input class="form-input" id="c-date" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ملاحظات</label>
+        <textarea class="form-textarea" id="c-notes" rows="2" placeholder="تفاصيل إضافية..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-lg" style="flex:1;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;" onclick="saveCost()">حفظ</button>
+      <button class="btn btn-gray btn-lg" onclick="closeCostModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ADD PAYMENT MODAL ========== -->
+<div id="af-pay-modal" class="overlay hidden" style="z-index:300;">
+  <div class="modal" style="max-width:400px;border-color:rgba(34,197,94,0.4);">
+    <div class="modal-title" style="color:#22c55e;" id="af-pay-modal-title">💰 إضافة دفعة</div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <!-- Date with calendar -->
+      <div class="form-group">
+        <label class="form-label" style="margin-bottom:8px;display:block;">📅 تاريخ الدفعة *</label>
+        <input class="form-input" id="afp-date" type="date"
+          style="font-size:16px;padding:12px;color:#e2eeff;
+                 background:rgba(34,197,94,0.07);border-color:rgba(34,197,94,0.3);">
+      </div>
+
+      <!-- Amount -->
+      <div class="form-group">
+        <label class="form-label" style="margin-bottom:8px;display:block;">💵 المبلغ (ر.س) *</label>
+        <input class="form-input" id="afp-amount" type="number" placeholder="0.00"
+          style="font-size:18px;padding:12px;font-weight:700;color:#22c55e;
+                 background:rgba(34,197,94,0.07);border-color:rgba(34,197,94,0.3);">
+      </div>
+
+      <!-- Note -->
+      <div class="form-group">
+        <label class="form-label" style="margin-bottom:8px;display:block;">📝 ملاحظة (اختياري)</label>
+        <input class="form-input" id="afp-note" type="text" placeholder="مثال: شيك، تحويل...">
+      </div>
+
+    </div>
+
+    <div class="modal-footer" style="margin-top:20px;">
+      <button class="btn btn-green btn-lg" style="flex:1;" onclick="confirmAfPayment()">✅ إضافة الدفعة</button>
+      <button class="btn btn-gray btn-lg" onclick="closeAfPayModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
 
 <!-- ========== ADD TO ARCHIVE MODAL ========== -->
 <div id="archive-form-modal" class="overlay hidden">
