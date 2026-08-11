@@ -616,6 +616,7 @@
   <div id="page-archive" class="hidden">
     <div class="page-header">
       <div class="page-title">🗂️ سجل المستأجرين السابقين</div>
+      <button class="btn btn-gold" onclick="openArchiveForm()">➕ إضافة مستأجر سابق</button>
     </div>
     <div id="archive-list"></div>
   </div>
@@ -927,13 +928,25 @@
 
     <!-- Report type -->
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
-      <label style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="setPrintType('all')">
-        <input type="radio" name="print-type" id="pt-all" value="all" checked style="accent-color:#3b82f6;">
+      <!-- Option 1: Full project report -->
+      <label style="display:flex;align-items:center;gap:10px;background:rgba(59,130,246,0.08);border:2px solid rgba(59,130,246,0.4);border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="setPrintType('all_years')">
+        <input type="radio" name="print-type" id="pt-all-years" value="all_years" checked style="accent-color:#3b82f6;">
         <div>
-          <div style="font-weight:700;font-size:14px;">📋 تقرير شامل</div>
-          <div style="font-size:11px;color:#64748b;margin-top:2px;">جميع الوحدات، الدفعات، المديونيات، السجل</div>
+          <div style="font-weight:800;font-size:14px;color:#3b82f6;">🗂️ تقرير شامل من بداية المشروع</div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px;">جميع السنوات — كل الدفعات والمستأجرين وتوزيع الأرباح الكامل</div>
         </div>
       </label>
+
+      <!-- Option 2: Year report -->
+      <label style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="setPrintType('all')">
+        <input type="radio" name="print-type" id="pt-all" value="all" style="accent-color:#3b82f6;">
+        <div>
+          <div style="font-weight:700;font-size:14px;">📋 تقرير سنة محددة</div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px;">دفعات ومديونيات وأرباح سنة بعينها</div>
+        </div>
+      </label>
+
+      <!-- Option 3: Unit report -->
       <label style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="setPrintType('unit')">
         <input type="radio" name="print-type" id="pt-unit" value="unit" style="accent-color:#3b82f6;">
         <div>
@@ -950,7 +963,7 @@
     </div>
 
     <!-- Year filter -->
-    <div style="margin-bottom:18px;">
+    <div id="year-filter-wrap" style="margin-bottom:18px;display:none;">
       <label class="form-label" style="display:block;margin-bottom:6px;">تصفية حسب السنة</label>
       <select class="form-select" id="print-year-select">
         <option value="all">كل السنوات</option>
@@ -1712,7 +1725,21 @@ function saveTenant() {
   const name = document.getElementById('f-name').value.trim();
   const start = document.getElementById('f-start').value;
   const rent = document.getElementById('f-rent').value;
+  const endD = document.getElementById('f-end').value;
   if (!name || !start || !rent) { toast('يرجى ملء الحقول المطلوبة', 'error'); return; }
+
+  // Check date conflicts with archived tenants (skip current tenant of this unit)
+  var archiveConflicts = (appData.archive || []).filter(function(r) {
+    if (r.unitId !== selectedUnit) return false;
+    return datesOverlap(start, endD || null, r.startDate, r.checkoutDate || r.endDate);
+  });
+  if (archiveConflicts.length > 0) {
+    var msg = 'يوجد تعارض في التواريخ مع مستأجر سابق:\n';
+    archiveConflicts.forEach(function(c) {
+      msg += '• ' + c.name + '\n  من ' + fmt(c.startDate) + ' إلى ' + fmt(c.checkoutDate || c.endDate) + '\n';
+    });
+    if (!confirm(msg + '\nهل تريد الاستمرار؟')) return;
+  }
   const existing = appData.tenants[selectedUnit] || {};
   appData.tenants[selectedUnit] = {
     name,
@@ -2086,10 +2113,12 @@ function deleteDebtPayment(debtId, idx) {
 let printType = 'all';
 
 function openPrintModal() {
-  printType = 'all';
-  document.getElementById('pt-all').checked = true;
+  printType = 'all_years';
+  document.getElementById('pt-all-years').checked = true;
   document.getElementById('unit-selector-wrap').style.display = 'none';
   document.getElementById('sections-wrap').style.display = 'block';
+  var yrWrap = document.getElementById('year-filter-wrap');
+  if (yrWrap) yrWrap.style.display = 'none';
 
   // Populate unit dropdown
   const sel = document.getElementById('print-unit-select');
@@ -2127,14 +2156,24 @@ function closePrintModal() {
 
 function setPrintType(t) {
   printType = t;
-  document.getElementById('unit-selector-wrap').style.display = t === 'unit' ? 'block' : 'none';
-  document.getElementById('sections-wrap').style.display = t === 'all' ? 'block' : 'none';
+  document.getElementById('unit-selector-wrap').style.display = (t === 'unit') ? 'block' : 'none';
+  document.getElementById('sections-wrap').style.display = (t === 'all' || t === 'all_years') ? 'block' : 'none';
+  // Show year filter only for single-year report
+  var yrWrap = document.getElementById('year-filter-wrap');
+  if (yrWrap) yrWrap.style.display = (t === 'all') ? 'block' : 'none';
+  // Highlight selected option
+  ['pt-all-years','pt-all','pt-unit'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.parentElement.style.borderColor = el.checked ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.1)';
+  });
 }
 
 function generateReport() {
   var filterYear = document.getElementById('print-year-select').value;
-  if (printType === 'unit') {
-    const unitId = document.getElementById('print-unit-select').value;
+  if (printType === 'all_years') {
+    printFullReport('all');
+  } else if (printType === 'unit') {
+    var unitId = document.getElementById('print-unit-select').value;
     printUnitReport(unitId, filterYear);
   } else {
     printFullReport(filterYear);
@@ -2880,6 +2919,165 @@ function renderPartners() {
 }
 
 
+
+// ===================== ARCHIVE FORM =====================
+var _afPayments = [];
+
+function openArchiveForm() {
+  _afPayments = [];
+  document.getElementById('af-name').value     = '';
+  document.getElementById('af-phone').value    = '';
+  document.getElementById('af-idnum').value    = '';
+  document.getElementById('af-start').value    = '';
+  document.getElementById('af-end').value      = '';
+  document.getElementById('af-rent').value     = '';
+  document.getElementById('af-cycle').value    = '12months';
+  document.getElementById('af-checkout').value = new Date().toISOString().split('T')[0];
+  document.getElementById('af-reason').value   = 'انتهاء العقد';
+  document.getElementById('af-notes').value    = '';
+  // Populate units
+  var uSel = document.getElementById('af-unit');
+  uSel.innerHTML = '<option value="">-- اختر الوحدة --</option>'
+    + getUnits().map(function(u){ return '<option value="'+u.id+'">'+u.label+'</option>'; }).join('');
+  renderAfPayments();
+  document.getElementById('archive-form-modal').classList.remove('hidden');
+}
+
+function closeArchiveForm() {
+  document.getElementById('archive-form-modal').classList.add('hidden');
+}
+
+function afAddPayment() {
+  var date = prompt('تاريخ الدفعة (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+  if (!date) return;
+  var amount = prompt('المبلغ (ر.س):');
+  if (!amount || isNaN(parseFloat(amount))) return;
+  var note = prompt('ملاحظة (اختياري):') || '';
+  _afPayments.push({ date: date, amount: parseFloat(amount), note: note });
+  _afPayments.sort(function(a,b){ return a.date > b.date ? 1 : -1; });
+  renderAfPayments();
+}
+
+function afRemovePayment(idx) {
+  _afPayments.splice(idx, 1);
+  renderAfPayments();
+}
+
+function renderAfPayments() {
+  var el = document.getElementById('af-payments-list');
+  if (!_afPayments.length) {
+    el.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:8px;">لا توجد دفعات مضافة بعد</div>';
+    return;
+  }
+  el.innerHTML = _afPayments.map(function(p, i) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;'
+      + 'background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);'
+      + 'border-radius:8px;padding:8px 12px;">'
+      + '<div>'
+      + '<span style="font-weight:700;color:#22c55e;">' + (parseFloat(p.amount)||0).toLocaleString('ar') + ' ر.س</span>'
+      + '<span style="color:#64748b;font-size:12px;margin-right:10px;">📅 ' + fmt(p.date) + '</span>'
+      + (p.note ? '<span style="color:#64748b;font-size:11px;">· ' + p.note + '</span>' : '')
+      + '</div>'
+      + '<button onclick="afRemovePayment(' + i + ')" style="width:24px;height:24px;border-radius:6px;border:none;'
+      + 'cursor:pointer;background:rgba(239,68,68,0.15);color:#ef4444;font-size:13px;">×</button>'
+      + '</div>';
+  }).join('');
+}
+
+function datesOverlap(s1, e1, s2, e2) {
+  // Returns true if [s1,e1] overlaps [s2,e2]
+  var start1 = new Date(s1);
+  var end1   = e1 ? new Date(e1) : new Date('2099-12-31');
+  var start2 = new Date(s2);
+  var end2   = e2 ? new Date(e2) : new Date('2099-12-31');
+  return start1 <= end2 && start2 <= end1;
+}
+
+function checkDateConflicts(unitId, newStart, newEnd) {
+  var conflicts = [];
+
+  // Check current tenant of the unit
+  var current = appData.tenants[unitId];
+  if (current && current.startDate) {
+    if (datesOverlap(newStart, newEnd, current.startDate, current.endDate)) {
+      conflicts.push({
+        name:  current.name,
+        start: current.startDate,
+        end:   current.endDate || 'حالياً',
+        type:  'مستأجر حالي'
+      });
+    }
+  }
+
+  // Check archived tenants of the same unit
+  (appData.archive || []).forEach(function(r) {
+    if (r.unitId !== unitId) return;
+    if (datesOverlap(newStart, newEnd, r.startDate, r.checkoutDate || r.endDate)) {
+      conflicts.push({
+        name:  r.name,
+        start: r.startDate,
+        end:   r.checkoutDate || r.endDate || '—',
+        type:  'مستأجر سابق'
+      });
+    }
+  });
+
+  return conflicts;
+}
+
+function saveArchiveForm() {
+  var name     = document.getElementById('af-name').value.trim();
+  var start    = document.getElementById('af-start').value;
+  var rent     = document.getElementById('af-rent').value;
+  var unitId   = document.getElementById('af-unit').value;
+  var checkout = document.getElementById('af-checkout').value;
+  var endDate  = document.getElementById('af-end').value;
+
+  if (!name || !start || !rent || !unitId || !checkout) {
+    toast('يرجى ملء الحقول المطلوبة', 'error'); return;
+  }
+
+  // Validate: checkout must be after start
+  if (checkout <= start) {
+    toast('تاريخ الخروج يجب أن يكون بعد بداية العقد', 'error'); return;
+  }
+
+  // Check for date conflicts
+  var conflicts = checkDateConflicts(unitId, start, checkout);
+  if (conflicts.length > 0) {
+    var msg = 'يوجد تعارض في التواريخ مع:\n';
+    conflicts.forEach(function(c) {
+      msg += '• ' + c.name + ' (' + c.type + ')\n  من ' + fmt(c.start) + ' إلى ' + fmt(c.end) + '\n';
+    });
+    alert(msg);
+    return;
+  }
+
+  var unit = getUnits().find(function(u){ return u.id === unitId; });
+  appData.archive = appData.archive || [];
+  appData.archive.push({
+    id:             Date.now(),
+    unitId:         unitId,
+    unitLabel:      unit ? unit.label : unitId,
+    name:           name,
+    phone:          document.getElementById('af-phone').value.trim(),
+    idNumber:       document.getElementById('af-idnum').value.trim(),
+    startDate:      start,
+    endDate:        document.getElementById('af-end').value,
+    rentAmount:     rent,
+    paymentCycle:   document.getElementById('af-cycle').value,
+    notes:          document.getElementById('af-notes').value.trim(),
+    checkoutDate:   checkout,
+    checkoutReason: document.getElementById('af-reason').value,
+    checkoutNotes:  '',
+    paymentHistory: _afPayments.slice(),
+  });
+  saveData();
+  closeArchiveForm();
+  renderAll();
+  toast('تم حفظ المستأجر في السجل ✓');
+}
+
 // ===================== INIT =====================
 // renderAll() is triggered by Firebase real-time listener on first load
 </script>
@@ -3003,5 +3201,81 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
+
+<!-- ========== ADD TO ARCHIVE MODAL ========== -->
+<div id="archive-form-modal" class="overlay hidden">
+  <div class="modal" style="max-width:560px;border-color:rgba(59,130,246,0.3);max-height:90vh;overflow-y:auto;">
+    <div class="modal-title gold">➕ إضافة مستأجر سابق للسجل</div>
+    <div class="form-grid">
+      <div class="form-group full-col">
+        <label class="form-label">اسم المستأجر *</label>
+        <input class="form-input" id="af-name" type="text" placeholder="الاسم الكامل">
+      </div>
+      <div class="form-group">
+        <label class="form-label">رقم الجوال</label>
+        <input class="form-input" id="af-phone" type="tel" placeholder="05xxxxxxxx">
+      </div>
+      <div class="form-group">
+        <label class="form-label">رقم الهوية</label>
+        <input class="form-input" id="af-idnum" type="text" placeholder="رقم الهوية">
+      </div>
+      <div class="form-group">
+        <label class="form-label">بداية العقد *</label>
+        <input class="form-input" id="af-start" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">نهاية العقد</label>
+        <input class="form-input" id="af-end" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">قيمة الإيجار (ر.س) *</label>
+        <input class="form-input" id="af-rent" type="number" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">دورة الدفع</label>
+        <select class="form-select" id="af-cycle">
+          <option value="12months">سنوي</option>
+          <option value="6months">كل 6 أشهر</option>
+          <option value="3months">كل 3 أشهر</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">الوحدة *</label>
+        <select class="form-select" id="af-unit"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">تاريخ الخروج *</label>
+        <input class="form-input" id="af-checkout" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">سبب الخروج</label>
+        <select class="form-select" id="af-reason">
+          <option value="انتهاء العقد">انتهاء العقد</option>
+          <option value="إنهاء مبكر من المستأجر">إنهاء مبكر من المستأجر</option>
+          <option value="إنهاء مبكر من المالك">إنهاء مبكر من المالك</option>
+          <option value="أخرى">أخرى</option>
+        </select>
+      </div>
+      <div class="form-group full-col">
+        <label class="form-label">ملاحظات</label>
+        <textarea class="form-textarea" id="af-notes" rows="2" placeholder="ملاحظات..."></textarea>
+      </div>
+    </div>
+
+    <!-- Payment History -->
+    <div style="margin-top:16px;border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-weight:700;color:#93c5fd;font-size:14px;">💰 سجل الدفعات</div>
+        <button class="btn btn-green" style="padding:6px 14px;font-size:12px;" onclick="afAddPayment()">+ إضافة دفعة</button>
+      </div>
+      <div id="af-payments-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;"></div>
+    </div>
+
+    <div class="modal-footer" style="margin-top:16px;">
+      <button class="btn btn-gold btn-lg" style="flex:1" onclick="saveArchiveForm()">💾 حفظ في السجل</button>
+      <button class="btn btn-gray btn-lg" onclick="closeArchiveForm()">إلغاء</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
